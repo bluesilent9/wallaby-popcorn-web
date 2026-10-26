@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ ${1:-} != --build ]]; then
+if [[ ${1:-} != --build && ${1:-} != --package-only ]]; then
     echo 'Source preparation only. After reboot, run: bash packaging/build-web-deb.sh --build [output-directory]'
     exit 0
 fi
@@ -9,6 +9,8 @@ cd "$repo"
 output=${2:-"$repo/artifacts"}
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
+export TMPDIR="$output/.wallaby-package-tmp"
+mkdir -p "$TMPDIR"
 command -v node >/dev/null
 command -v dpkg-deb >/dev/null
 [[ $(node -p "require('./package.json').version") == 12.2.0 ]]
@@ -16,7 +18,9 @@ command -v dpkg-deb >/dev/null
 # Run sequentially: no concurrent targets or architecture builds.
 export NODE_ENV=production
 export NODE_OPTIONS=${NODE_OPTIONS:---max-old-space-size=4096}
-node node_modules/webpack/bin/webpack.js --config packaging/webpack.low-memory.cjs
+if [[ $1 == --build ]]; then
+    node node_modules/webpack/bin/webpack.js --config packaging/webpack.low-memory.cjs
+fi
 [[ -s dist/index.html && -s dist/serviceworker.js ]]
 stage=$(mktemp -d "$output/.wallaby-web-package.XXXXXXXX")
 trap 'rm -rf -- "$stage"' EXIT
@@ -37,7 +41,7 @@ Description: Wallaby Popcorn web interface for Jellyfin Server 12.2
  Installs separately and does not change the active server web directory.
 CONTROL
 chmod -R a+rX "$stage"
-dpkg-deb --root-owner-group --build "$stage" "$output/wallaby-popcorn-web_12.2.0-0wallaby1_all.deb"
+dpkg-deb --threads-max=1 --root-owner-group --build "$stage" "$output/wallaby-popcorn-web_12.2.0-0wallaby1_all.deb"
 (cd "$output" && sha256sum wallaby-popcorn-web_12.2.0-0wallaby1_all.deb > wallaby-popcorn-web_12.2.0-0wallaby1_all.deb.sha256)
 # Like upstream's jellyfin metapackage, one overall server installer selects components.
 meta=$(mktemp -d "$output/.wallaby-server-package.XXXXXXXX")
@@ -57,6 +61,6 @@ Description: Wallaby Popcorn Server components
  Web directory activation is documented separately; networking is unchanged.
 CONTROL
 chmod -R a+rX "$meta"
-dpkg-deb --root-owner-group --build "$meta" "$output/wallaby-popcorn-server_12.2.0-0wallaby1_all.deb"
+dpkg-deb --threads-max=1 --root-owner-group --build "$meta" "$output/wallaby-popcorn-server_12.2.0-0wallaby1_all.deb"
 (cd "$output" && sha256sum wallaby-popcorn-server_12.2.0-0wallaby1_all.deb > wallaby-popcorn-server_12.2.0-0wallaby1_all.deb.sha256)
 echo 'Built server installer and web-assets package. No backend compilation, installation, service restart or network change performed.'
