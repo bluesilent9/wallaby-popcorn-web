@@ -25,6 +25,14 @@ vi.mock('hooks/useApi', () => ({
         __legacyApiClient__: mocks.client
     })
 }));
+vi.mock('scripts/inputManager', () => ({
+    default: {
+        on: (scope: Window, listener: EventListener) =>
+            scope.addEventListener('command', listener),
+        off: (scope: Window, listener: EventListener) =>
+            scope.removeEventListener('command', listener)
+    }
+}));
 vi.mock('components/apphost', () => ({ appHost: { exit: mocks.exit } }));
 vi.mock('apps/modern/features/libraries/utils/path', () => ({
     isLibraryPath: (path: string) =>
@@ -196,4 +204,93 @@ it('leaves mobile navigation and artwork unchanged', async () => {
     await escape();
     expect(path()).toBe('/movies');
     expect(host.querySelector('.wallaby-backdrop')).toBeNull();
+});
+
+it('handles native Back commands from the desktop input plugin through library and Home exit', async () => {
+    vi.stubGlobal('NativeShell', { AppHost: { exit: mocks.exit } });
+    await mount('/movies?topParentId=films&view=0');
+    await act(async () => {
+        host.querySelector('a')!.click();
+    });
+    const back = async () => {
+        const command = new CustomEvent('command', {
+            detail: { command: 'back' },
+            bubbles: true,
+            cancelable: true
+        });
+        await act(async () => {
+            host.querySelector('button')!.dispatchEvent(command);
+        });
+        expect(command.defaultPrevented).toBe(true);
+    };
+    await back();
+    expect(path()).toBe('/movies?topParentId=films&view=0');
+    await back();
+    expect(path()).toBe('/home');
+    await back();
+    expect(mocks.exit).toHaveBeenCalledTimes(1);
+});
+it('recognizes legacy Escape key codes used by embedded web engines', async () => {
+    await mount('/movies');
+    await act(async () => {
+        host.querySelector('button')!.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                keyCode: 27,
+                bubbles: true,
+                cancelable: true
+            })
+        );
+    });
+    expect(path()).toBe('/home');
+});
+it('lets an open menu handle Escape, but ignores retained invisible overlays', async () => {
+    await mount('/movies');
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    menu.getClientRects = () =>
+        [menu.getBoundingClientRect()] as unknown as DOMRectList;
+    document.body.append(menu);
+    await escape();
+    expect(path()).toBe('/movies');
+    menu.style.visibility = 'hidden';
+    await escape();
+    expect(path()).toBe('/home');
+    menu.remove();
+});
+it('preserves player Escape handling and avoids repeated navigation on held Escape', async () => {
+    await mount('/video');
+    await escape();
+    expect(path()).toBe('/video');
+});
+
+it('does not navigate repeatedly when Escape is held down', async () => {
+    await mount('/movies');
+    await act(async () => {
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                key: 'Escape',
+                repeat: true,
+                bubbles: true,
+                cancelable: true
+            })
+        );
+    });
+    expect(path()).toBe('/movies');
+    await escape();
+    expect(path()).toBe('/home');
+});
+
+it('clears a stale library origin when a new title is opened from Home', async () => {
+    await mount('/movies?topParentId=films');
+    await act(async () => {
+        host.querySelector('a')!.click();
+    });
+    await escape();
+    await escape();
+    expect(path()).toBe('/home');
+    await act(async () => {
+        host.querySelector('a')!.click();
+    });
+    await escape();
+    expect(path()).toBe('/home');
 });
