@@ -12,6 +12,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useApi } from 'hooks/useApi';
 import { appHost } from 'components/apphost';
 import screenfull from 'screenfull';
+import inputManager from 'scripts/inputManager';
 import type { ItemDto } from 'types/base/models/item-dto';
 import { useWallaby } from './useWallaby';
 import cinema from './assets/cinema.png';
@@ -129,6 +130,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
     }, [images]);
     useEffect(() => {
         const old = previous.current;
+        if (home) origin.current = undefined;
         if (libraryPath(old.split('?')[0]) && detailPath(location.pathname)) {
             origin.current = old;
         }
@@ -180,30 +182,51 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
     }, [enabled, home, api, user?.Id, client, select]);
     useEffect(() => {
         if (!enabled) return;
+        const blocked = () =>
+            location.pathname === '/video'
+            || [
+                ...document.querySelectorAll(
+                    '[role="dialog"], [role="menu"], .dialog.opened'
+                )
+            ].some((node) => {
+                const style = getComputedStyle(node);
+                return (
+                    node.getClientRects().length > 0
+                    && !node.closest('[hidden], [aria-hidden="true"], .hide')
+                    && style.visibility !== 'hidden'
+                    && style.display !== 'none'
+                );
+            });
+        const back = () => {
+            if (blocked()) return false;
+            if (detailPath(location.pathname)) {
+                navigate(origin.current || '/home');
+            } else if (library) {
+                navigate('/home');
+            } else if (home && (window.NativeShell || 'tizen' in window)) {
+                appHost.exit();
+            } else {
+                return false;
+            }
+            return true;
+        };
         const key = (event: KeyboardEvent) => {
             if (
                 event.defaultPrevented
                 || event.altKey
                 || event.ctrlKey
                 || event.metaKey
-                || location.pathname === '/video'
-            ) {
-                return;
-            }
-            if (
-                [
-                    ...document.querySelectorAll(
-                        '[role="dialog"], [role="menu"], .dialog'
-                    )
-                ].some(
-                    (node) =>
-                        node.getClientRects().length
-                        && !node.closest('[hidden], .hide')
-                )
-            ) {
-                return;
-            }
-            if (
+                || blocked()
+            ) { return; }
+            const escape =
+                event.key === 'Escape'
+                || event.key === 'Esc'
+                || event.keyCode === 27;
+            if (escape && (library || detailPath(location.pathname) || home)) {
+                if (!event.repeat && !back()) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            } else if (
                 event.key === '\\'
                 && !(event.target as HTMLElement).matches('input,textarea,select')
             ) {
@@ -212,26 +235,26 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
                 if (!event.repeat && screenfull.isEnabled) {
                     screenfull.toggle().catch(() => undefined);
                 }
-                return;
             }
+        };
+        // Qt/TV input plugins can send Jellyfin Back commands instead of DOM keys.
+        // Register through inputManager so it dispatches its cancellable command event.
+        const command = (event: CustomEvent<{ command: string }>) => {
             if (
-                event.key === 'Escape'
-                && (library || detailPath(location.pathname) || home)
+                !event.defaultPrevented
+                && event.detail?.command === 'back'
+                && back()
             ) {
                 event.preventDefault();
                 event.stopImmediatePropagation();
-                if (event.repeat) return;
-                if (detailPath(location.pathname)) {
-                    navigate(origin.current || '/home');
-                } else if (library) {
-                    navigate('/home');
-                } else if (window.NativeShell || 'tizen' in window) {
-                    appHost.exit();
-                }
             }
         };
-        document.addEventListener('keydown', key, true);
-        return () => document.removeEventListener('keydown', key, true);
+        window.addEventListener('keydown', key, true);
+        inputManager.on(window, command);
+        return () => {
+            window.removeEventListener('keydown', key, true);
+            inputManager.off(window, command);
+        };
     }, [enabled, home, library, location.pathname, navigate]);
     const value = useMemo(() => ({ select, setToolbarHeight }), [select]);
     const artwork = (
