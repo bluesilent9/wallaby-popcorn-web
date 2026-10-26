@@ -4,6 +4,7 @@ import { type Theme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { useWallabyArtwork } from 'wallaby/WallabySurface';
 import AppBody from 'components/AppBody';
 import CustomCss from 'components/CustomCss';
 import OffsetAppBar from 'components/OffsetAppBar';
@@ -19,6 +20,7 @@ import { isLibraryPath } from './features/libraries/utils/path';
 import './AppOverrides.scss';
 
 export const Component = () => {
+    const { setToolbarHeight } = useWallabyArtwork();
     const [ isDrawerActive, setIsDrawerActive ] = useState(false);
     const { user } = useApi();
     const location = useLocation();
@@ -42,7 +44,7 @@ export const Component = () => {
                 }}
             >
                 <StrictMode>
-                    <OffsetAppBar dense>
+                    <OffsetAppBar dense onHeightChange={setToolbarHeight}>
                         <AppToolbar
                             isDrawerAvailable={!isMediumScreen && isDrawerAvailable}
                             isDrawerOpen={isDrawerOpen}
