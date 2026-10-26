@@ -30,7 +30,7 @@ cp LICENSE "$stage/usr/share/doc/wallaby-popcorn-web/copyright"
 cp docs/server-web.md "$stage/usr/share/doc/wallaby-popcorn-web/README.md"
 cat > "$stage/DEBIAN/control" <<'CONTROL'
 Package: wallaby-popcorn-web
-Version: 12.2.0-0wallaby1
+Version: 12.2.0-0wallaby2
 Section: web
 Priority: optional
 Architecture: all
@@ -41,8 +41,8 @@ Description: Wallaby Popcorn web interface for Jellyfin Server 12.2
  Installs separately and does not change the active server web directory.
 CONTROL
 chmod -R a+rX "$stage"
-dpkg-deb --threads-max=1 --root-owner-group --build "$stage" "$output/wallaby-popcorn-web_12.2.0-0wallaby1_all.deb"
-(cd "$output" && sha256sum wallaby-popcorn-web_12.2.0-0wallaby1_all.deb > wallaby-popcorn-web_12.2.0-0wallaby1_all.deb.sha256)
+dpkg-deb --threads-max=1 --root-owner-group --build "$stage" "$output/wallaby-popcorn-web_12.2.0-0wallaby2_all.deb"
+(cd "$output" && sha256sum wallaby-popcorn-web_12.2.0-0wallaby2_all.deb > wallaby-popcorn-web_12.2.0-0wallaby2_all.deb.sha256)
 # Like upstream's jellyfin metapackage, one overall server installer selects components.
 meta=$(mktemp -d "$output/.wallaby-server-package.XXXXXXXX")
 trap 'rm -rf -- "$stage" "$meta"' EXIT
@@ -50,17 +50,17 @@ mkdir -p "$meta/DEBIAN" "$meta/usr/share/doc/wallaby-popcorn-server"
 cp docs/server-web.md "$meta/usr/share/doc/wallaby-popcorn-server/README.md"
 cat > "$meta/DEBIAN/control" <<'CONTROL'
 Package: wallaby-popcorn-server
-Version: 12.2.0-0wallaby1
+Version: 12.2.0-0wallaby2
 Section: metapackages
 Priority: optional
 Architecture: all
 Maintainer: Wallaby Popcorn maintainers <wallaby-popcorn@users.noreply.github.com>
-Depends: wallaby-popcorn-web (= 12.2.0-0wallaby1), jellyfin-server (>= 12.2), jellyfin-server (<< 12.3~), jellyfin-ffmpeg8
+Depends: wallaby-popcorn-web (= 12.2.0-0wallaby2), jellyfin-server (>= 12.2), jellyfin-server (<< 12.3~), jellyfin-ffmpeg8
 Description: Wallaby Popcorn Server components
  Installs the matching Wallaby web interface and Jellyfin server backend.
  Web directory activation is documented separately; networking is unchanged.
 CONTROL
 chmod -R a+rX "$meta"
-dpkg-deb --threads-max=1 --root-owner-group --build "$meta" "$output/wallaby-popcorn-server_12.2.0-0wallaby1_all.deb"
-(cd "$output" && sha256sum wallaby-popcorn-server_12.2.0-0wallaby1_all.deb > wallaby-popcorn-server_12.2.0-0wallaby1_all.deb.sha256)
+dpkg-deb --threads-max=1 --root-owner-group --build "$meta" "$output/wallaby-popcorn-server_12.2.0-0wallaby2_all.deb"
+(cd "$output" && sha256sum wallaby-popcorn-server_12.2.0-0wallaby2_all.deb > wallaby-popcorn-server_12.2.0-0wallaby2_all.deb.sha256)
 echo 'Built server installer and web-assets package. No backend compilation, installation, service restart or network change performed.'
