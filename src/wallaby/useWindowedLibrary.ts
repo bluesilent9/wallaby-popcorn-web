@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { BaseItemKind } from "@jellyfin/sdk/lib/generated-client/models/base-item-kind";
-import { useApi } from "hooks/useApi";
-import { fetchGetItemsViewByType } from "hooks/useFetchItems";
-import type { ItemDto } from "types/base/models/item-dto";
-import type { LibraryViewSettings, ParentId } from "types/library";
-import type { LibraryTab } from "types/libraryTab";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
+import { useApi } from 'hooks/useApi';
+import { fetchGetItemsViewByType } from 'hooks/useFetchItems';
+import type { ItemDto } from 'types/base/models/item-dto';
+import type { LibraryViewSettings, ParentId } from 'types/library';
+import type { LibraryTab } from 'types/libraryTab';
 
 export const BATCH_SIZE = 100;
 export const MAX_BATCHES = 8;
@@ -25,7 +25,7 @@ export function useWindowedLibrary(
     viewType: LibraryTab | undefined,
     parentId: ParentId,
     itemTypes: BaseItemKind[],
-    settings: LibraryViewSettings,
+    settings: LibraryViewSettings
 ): WindowedLibrary {
     const currentApi = useApi();
     const { api, user } = currentApi;
@@ -40,7 +40,7 @@ export function useWindowedLibrary(
         settings.Alphabet,
         settings.SortBy,
         settings.SortOrder,
-        settings.ImageType,
+        settings.ImageType
     ]);
     const pages = useRef(new Map<number, ItemDto[]>());
     const pending = useRef(new Map<number, AbortController>());
@@ -50,7 +50,7 @@ export function useWindowedLibrary(
         settings,
         viewType,
         parentId,
-        itemTypes,
+        itemTypes
     });
     current.current = { currentApi, settings, viewType, parentId, itemTypes };
     const [total, setTotal] = useState<number>();
@@ -60,9 +60,9 @@ export function useWindowedLibrary(
     const fetchPage = useCallback(
         (start: number) => {
             if (
-                !enabled ||
-                pages.current.has(start) ||
-                pending.current.has(start)
+                !enabled
+                || pages.current.has(start)
+                || pending.current.has(start)
             ) {
                 return;
             }
@@ -79,18 +79,18 @@ export function useWindowedLibrary(
                 c.itemTypes,
                 c.settings,
                 { signal: controller.signal },
-                { startIndex: start, limit: BATCH_SIZE },
+                { startIndex: start, limit: BATCH_SIZE }
             )
                 .then((result) => {
                     if (
-                        ticket !== generation.current ||
-                        controller.signal.aborted
+                        ticket !== generation.current
+                        || controller.signal.aborted
                     ) {
                         return;
                     }
                     const count = Number(result?.TotalRecordCount);
                     if (!Number.isSafeInteger(count) || count < 0) {
-                        throw new Error("Invalid library result count");
+                        throw new Error('Invalid library result count');
                     }
                     pages.current.delete(start);
                     pages.current.set(start, result?.Items || []);
@@ -98,12 +98,12 @@ export function useWindowedLibrary(
                         Math.floor(wanted.current[0] / BATCH_SIZE) * BATCH_SIZE;
                     const lastWanted =
                         Math.floor(
-                            Math.max(wanted.current[0], wanted.current[1] - 1) /
-                                BATCH_SIZE,
+                            Math.max(wanted.current[0], wanted.current[1] - 1)
+                                / BATCH_SIZE
                         ) * BATCH_SIZE;
                     while (pages.current.size > MAX_BATCHES) {
                         const victim = [...pages.current.keys()].find(
-                            (key) => key < firstWanted || key > lastWanted,
+                            (key) => key < firstWanted || key > lastWanted
                         );
                         if (victim === undefined) break;
                         pages.current.delete(victim);
@@ -114,11 +114,11 @@ export function useWindowedLibrary(
                 })
                 .catch(() => {
                     if (
-                        ticket === generation.current &&
-                        !controller.signal.aborted
+                        ticket === generation.current
+                        && !controller.signal.aborted
                     ) {
                         setError(
-                            "Could not load library titles. Check the server connection and retry.",
+                            'Could not load library titles. Check the server connection and retry.'
                         );
                     }
                 })
@@ -128,7 +128,7 @@ export function useWindowedLibrary(
                     }
                 });
         },
-        [enabled, queryKey],
+        [enabled, queryKey]
     ); // Query contents, not transient settings object identity.
     useEffect(() => {
         generation.current++;
@@ -154,7 +154,7 @@ export function useWindowedLibrary(
             // Discard requests from a previous scroll window before requesting this one.
             const boundedEnd = Math.min(
                 end,
-                start + (MAX_BATCHES - 1) * BATCH_SIZE,
+                start + (MAX_BATCHES - 1) * BATCH_SIZE
             );
             wanted.current = [start, boundedEnd];
             pending.current.forEach((controller, offset) => {
@@ -172,14 +172,14 @@ export function useWindowedLibrary(
                 fetchPage(offset);
             }
         },
-        [error, fetchPage],
+        [error, fetchPage]
     );
     const itemAt = useCallback(
         (index: number) =>
             pages.current.get(Math.floor(index / BATCH_SIZE) * BATCH_SIZE)?.[
                 index % BATCH_SIZE
             ],
-        [revision, queryKey],
+        [revision, queryKey]
     );
     const retry = useCallback(() => {
         setError(undefined);
@@ -218,20 +218,20 @@ export function useWindowedLibrary(
                     c.itemTypes,
                     c.settings,
                     undefined,
-                    { startIndex: offset, limit: BATCH_SIZE },
+                    { startIndex: offset, limit: BATCH_SIZE }
                 );
                 if (ticket !== generation.current) return [];
                 items.push(...(result?.Items || []));
                 if (
-                    !result?.Items?.length ||
-                    items.length >= (result.TotalRecordCount || 0)
+                    !result?.Items?.length
+                    || items.length >= (result.TotalRecordCount || 0)
                 ) {
                     return items;
                 }
             }
         } catch {
             setError(
-                "Could not prepare the playback queue. Check the server connection and retry.",
+                'Could not prepare the playback queue. Check the server connection and retry.'
             );
             return [];
         }
@@ -245,7 +245,7 @@ export function useWindowedLibrary(
             retry,
             refresh,
             itemsForAction,
-            queryKey,
+            queryKey
         }),
         [
             total,
@@ -255,7 +255,7 @@ export function useWindowedLibrary(
             retry,
             refresh,
             itemsForAction,
-            queryKey,
-        ],
+            queryKey
+        ]
     );
 }
