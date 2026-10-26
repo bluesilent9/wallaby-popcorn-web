@@ -186,15 +186,18 @@ export const useGetQueryFilters = (
     });
 };
 
-const fetchGetItemsViewByType = async (
+export const fetchGetItemsViewByType = async (
     currentApi: JellyfinApiContext,
     viewType: LibraryTab | undefined,
     parentId: ParentId,
     itemType: BaseItemKind[],
     libraryViewSettings: LibraryViewSettings,
-    options?: AxiosRequestConfig
+    options?: AxiosRequestConfig,
+    paging?: { startIndex: number; limit: number }
 ) => {
     const { api, user } = currentApi;
+    const limitQuery = paging ? { limit: paging.limit } : getLimitQuery();
+    const startIndex = paging?.startIndex ?? libraryViewSettings.StartIndex;
     if (api && user?.Id && viewType) {
         const isFavorite = libraryViewSettings.Filters?.Status?.includes(ItemFilter.IsFavorite) || undefined;
         let response;
@@ -207,12 +210,12 @@ const fetchGetItemsViewByType = async (
                         enableImageTypes: [libraryViewSettings.ImageType, ImageType.Backdrop],
                         ...getFieldsQuery(viewType, libraryViewSettings),
                         ...getFiltersQuery(viewType, libraryViewSettings),
-                        ...getLimitQuery(),
+                        ...limitQuery,
                         ...getAlphaPickerQuery(libraryViewSettings),
                         sortBy: libraryViewSettings.SortBy,
                         sortOrder: [libraryViewSettings.SortOrder],
                         includeItemTypes: itemType,
-                        startIndex: libraryViewSettings.StartIndex
+                        startIndex
                     },
                     {
                         signal: options?.signal
@@ -228,12 +231,12 @@ const fetchGetItemsViewByType = async (
                         enableImageTypes: [libraryViewSettings.ImageType, ImageType.Backdrop],
                         ...getFieldsQuery(viewType, libraryViewSettings),
                         ...getFiltersQuery(viewType, libraryViewSettings),
-                        ...getLimitQuery(),
+                        ...limitQuery,
                         ...getAlphaPickerQuery(libraryViewSettings),
                         sortBy: libraryViewSettings.SortBy,
                         sortOrder: [libraryViewSettings.SortOrder],
                         includeItemTypes: itemType,
-                        startIndex: libraryViewSettings.StartIndex
+                        startIndex
                     },
                     {
                         signal: options?.signal
@@ -249,10 +252,10 @@ const fetchGetItemsViewByType = async (
                         enableImageTypes: [libraryViewSettings.ImageType, ImageType.Backdrop],
                         fields: [ItemFields.PrimaryImageAspectRatio],
                         filters: libraryViewSettings?.Filters?.Status,
-                        ...getLimitQuery(),
+                        ...limitQuery,
                         ...getAlphaPickerQuery(libraryViewSettings),
                         personTypes: [PersonKind.Author],
-                        startIndex: libraryViewSettings.StartIndex
+                        startIndex
                     },
                     {
                         signal: options?.signal
@@ -266,12 +269,12 @@ const fetchGetItemsViewByType = async (
                         userId: user.Id,
                         parentId: parentId ?? undefined,
                         ...getFieldsQuery(viewType, libraryViewSettings),
-                        ...getLimitQuery(),
+                        ...limitQuery,
                         ...getAlphaPickerQuery(libraryViewSettings),
                         includeItemTypes: itemType,
                         isFavorite,
                         enableImageTypes: [ImageType.Thumb],
-                        startIndex: libraryViewSettings.StartIndex
+                        startIndex
                     },
                     {
                         signal: options?.signal
@@ -283,7 +286,7 @@ const fetchGetItemsViewByType = async (
                     {
                         userId: user.Id,
                         fields: [ItemFields.PrimaryImageAspectRatio],
-                        startIndex: libraryViewSettings.StartIndex,
+                        startIndex,
                         isFavorite,
                         enableImageTypes: [ImageType.Primary]
                     },
@@ -303,12 +306,12 @@ const fetchGetItemsViewByType = async (
                         enableImageTypes: [libraryViewSettings.ImageType, ImageType.Backdrop],
                         ...getFieldsQuery(viewType, libraryViewSettings),
                         ...getFiltersQuery(viewType, libraryViewSettings),
-                        ...getLimitQuery(),
+                        ...limitQuery,
                         ...getAlphaPickerQuery(libraryViewSettings),
                         sortBy: libraryViewSettings.SortBy,
                         sortOrder: [libraryViewSettings.SortOrder],
                         includeItemTypes: itemType,
-                        startIndex: libraryViewSettings.StartIndex
+                        startIndex
                     },
                     {
                         signal: options?.signal
@@ -337,13 +340,13 @@ const fetchGetItemsViewByType = async (
                         enableImageTypes: [libraryViewSettings.ImageType, ImageType.Backdrop],
                         ...getFieldsQuery(viewType, libraryViewSettings),
                         ...getFiltersQuery(viewType, libraryViewSettings),
-                        ...getLimitQuery(),
+                        ...limitQuery,
                         ...getAlphaPickerQuery(libraryViewSettings),
                         isFavorite: viewType === LibraryTab.Favorites ? true : undefined,
                         sortBy: libraryViewSettings.SortBy,
                         sortOrder: [libraryViewSettings.SortOrder],
                         includeItemTypes: itemType,
-                        startIndex: libraryViewSettings.StartIndex
+                        startIndex
                     },
                     {
                         signal: options?.signal
@@ -362,7 +365,8 @@ export const useGetItemsViewByType = (
     viewType: LibraryTab | undefined,
     parentId: ParentId,
     itemType: BaseItemKind[] = [],
-    libraryViewSettings: LibraryViewSettings
+    libraryViewSettings: LibraryViewSettings,
+    enabled = true
 ) => {
     const currentApi = useApi();
     return useQuery({
@@ -388,7 +392,7 @@ export const useGetItemsViewByType = (
                 { signal }
             ),
         refetchOnWindowFocus: false,
-        enabled: !!currentApi.api && !!currentApi.user?.Id
+        enabled: enabled && !!currentApi.api && !!currentApi.user?.Id
             && viewType
             && [
                 LibraryTab.Movies,
