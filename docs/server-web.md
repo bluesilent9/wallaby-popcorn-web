@@ -35,7 +35,7 @@ bash packaging/build-web-deb.sh --build /absolute/output/directory
 
 Jellyfin presents the server as one product but packages a `jellyfin` metapackage, `jellyfin-server` backend and `jellyfin-web` frontend. On the inspected server `jellyfin` depends on both components and `jellyfin-ffmpeg8`; the backend itself merely recommends the web package. Wallaby mirrors that component relationship: **wallaby-popcorn-server** is the overall installer, depending on an exact matching **wallaby-popcorn-web**, the compatible Jellyfin backend and FFmpeg. Source repositories remain separate; dependencies refer to binary packages, not repositories. A separate backend fork is only needed when backend source changes are required.
 
-This runs one production webpack build with one minifier process, then packages architecture-independent web files as `wallaby-popcorn-web_12.2.0-0wallaby1_all.deb`. The same command also assembles the tiny `wallaby-popcorn-server_12.2.0-0wallaby1_all.deb` installer package; this is packaging, not a second application compilation. It does not build or replace the server backend. Initial deployment target: the inspected Ubuntu 26.04 server running Jellyfin 12.2. No build, runtime or deployment success is implied by source checks.
+This runs one production webpack build with one minifier process, then packages architecture-independent web files as `wallaby-popcorn-web_12.2.0-0wallaby2_all.deb`. The same command also assembles the tiny `wallaby-popcorn-server_12.2.0-0wallaby2_all.deb` installer package; this is packaging, not a second application compilation. It does not build or replace the server backend. Initial deployment target: the inspected Ubuntu 26.04 server running Jellyfin 12.2. No build, runtime or deployment success is implied by source checks.
 
 ## Later installation and activation
 
@@ -56,3 +56,11 @@ Rollback: remove only the new Wallaby web-directory drop-in, reload systemd and 
 ## Branding and licence
 
 Visible desktop/TV product strings use Wallaby Popcorn; explicit Jellyfin Server strings use Wallaby Popcorn Server. Protocol names, API fields, upstream links and legal attribution remain. Artwork is reused from the existing Wallaby Popcorn desktop assets. Jellyfin source remains GPL-2.0-or-later; retain LICENSE and upstream credits.
+
+## Development correction after first live test
+
+The first live web build exposed a container-layout collision that mocked DOM tests missed. The native ItemsContainer now owns the grid directly, its scoped selector outranks late native card styles, and the virtual offset wrapper no longer carries the shared itemsContainer class. No display:contents wrapper is needed. Grid, List and Standard share that structure. A no-build CSS fixture at tests/wallaby-layout/serve.py reproduces the original collapse and checks the corrected structure against native card/list CSS extracted from the prior build.
+
+Escape navigation now accepts both browser key events (including legacy keyCode 27) and native desktop/TV Back commands dispatched through Jellyfin inputManager. Visible menus/dialogs and playback retain their handlers; invisible retained overlays do not block navigation. No desktop client source change is needed for this fix.
+
+The next package revision is 12.2.0-0wallaby2; the Jellyfin source version stays 12.2.0. Stop before rebuilding until the user has rebooted and authorized the next build. Keep the restored original interface active on the server in the meantime.
