@@ -2,6 +2,7 @@ import React, { FC, useCallback } from 'react';
 import Button from '@mui/material/Button';
 import Queue from '@mui/icons-material/Queue';
 
+import { useLibrary } from '../hooks/useLibrary';
 import { playbackManager } from 'components/playback/playbackmanager';
 import globalize from 'lib/globalize';
 import type { ItemDto } from 'types/base/models/item-dto';
@@ -19,7 +20,8 @@ const QueueButton: FC<QueueButtonProps> = ({
     hasFilters,
     isTextVisible
 }) => {
-    const queue = useCallback(() => {
+    const { windowed } = useLibrary();
+    const queue = useCallback(async () => {
         if (item && !hasFilters) {
             playbackManager.queue({
                 items: [item]
@@ -27,13 +29,15 @@ const QueueButton: FC<QueueButtonProps> = ({
                 console.error('[QueueButton] failed to add to queue', err);
             });
         } else {
+            const actionItems = windowed ? await windowed.itemsForAction() : items;
+            if (!actionItems.length) return;
             playbackManager.queue({
-                items
+                items: actionItems
             }).catch(err => {
                 console.error('[QueueButton] failed to add to queue', err);
             });
         }
-    }, [hasFilters, item, items]);
+    }, [hasFilters, item, items, windowed]);
 
     return (
         <Button
