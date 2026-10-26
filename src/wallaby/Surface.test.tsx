@@ -50,6 +50,7 @@ function Fixture() {
                 {location.search}
             </output>
             <Link to='/details?id=movie'>Details</Link>
+            <Link to='/video'>Play</Link>
             <div className='card' data-id='movie' data-type='Movie'>
                 <button>Movie</button>
             </div>
@@ -257,10 +258,47 @@ it('lets an open menu handle Escape, but ignores retained invisible overlays', a
     expect(path()).toBe('/home');
     menu.remove();
 });
-it('preserves player Escape handling and avoids repeated navigation on held Escape', async () => {
+it('leaves the separately mounted video layer uncovered', async () => {
+    await mount('/video');
+    expect(host.querySelector('.wallaby-screen')).toBeNull();
+    expect(host.querySelector('.wallaby-backdrop')).toBeNull();
+    expect(host.querySelector('.wallaby-header-fade')).toBeNull();
+});
+
+it('returns playback to its originating library on Escape', async () => {
+    await mount('/movies?topParentId=films&view=0');
+    await act(async () => {
+        host.querySelectorAll('a')[1].click();
+    });
+    expect(path()).toBe('/video');
+    await escape();
+    expect(path()).toBe('/movies?topParentId=films&view=0');
+    expect(host.querySelector('.wallaby-screen')).not.toBeNull();
+    await escape();
+    expect(path()).toBe('/home');
+});
+
+it('returns playback to the item details on native Back', async () => {
+    await mount('/details?id=movie');
+    await act(async () => {
+        host.querySelectorAll('a')[1].click();
+    });
+    const command = new CustomEvent('command', {
+        detail: { command: 'back' },
+        bubbles: true,
+        cancelable: true
+    });
+    await act(async () => {
+        host.querySelector('button')!.dispatchEvent(command);
+    });
+    expect(command.defaultPrevented).toBe(true);
+    expect(path()).toBe('/details?id=movie');
+});
+
+it('can leave a directly opened player without navigating outside the app', async () => {
     await mount('/video');
     await escape();
-    expect(path()).toBe('/video');
+    expect(path()).toBe('/home');
 });
 
 it('does not navigate repeatedly when Escape is held down', async () => {
