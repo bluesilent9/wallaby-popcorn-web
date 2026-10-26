@@ -134,21 +134,28 @@
     width: 100%;
 }
 
-.wallaby-library-cells {
-    display: grid;
+.wallaby-library-window {
     position: absolute;
     left: 0;
     right: 0;
     width: 100%;
-    text-align: left;
 }
 
-.wallaby-native-items {
-    display: contents !important;
+/* Own the layout on the actual native action container. The extra specificity
+   beats late-loaded Jellyfin .itemsContainer card rules, in either load order. */
+.wallaby-library-workspace .itemsContainer.wallaby-library-cells {
+    display: grid;
+    grid-template-columns: repeat(var(--wallaby-library-columns, 1), minmax(0, 1fr));
+    align-items: start;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: left;
 }
 
 .wallaby-library-cell {
     box-sizing: border-box;
+    width: 100%;
     min-width: 0;
     overflow: hidden;
     padding: 0 6px 10px;
