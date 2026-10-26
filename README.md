@@ -1,3 +1,11 @@
+# Wallaby Popcorn Web — Development
+
+Server-delivered Wallaby Popcorn interface for computers and web-based TVs, based on Jellyfin Web 12.2. Mobile layouts remain upstream. The Jellyfin server backend and networking remain unchanged.
+
+See [source, build and deployment notes](docs/server-web.md). Production build and live validation are pending. This repository is separate from the Android and desktop clients, following Jellyfin’s upstream repository split.
+
+---
+
 <h1 align="center">Jellyfin Web</h1>
 <h3 align="center">Part of the <a href="https://jellyfin.org">Jellyfin Project</a></h3>
 
