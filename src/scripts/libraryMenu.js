@@ -1,3 +1,4 @@
+import { isWallabyDisplay, brandText } from 'wallaby/platform';
 import escapeHtml from 'escape-html';
 import Headroom from 'headroom.js';
 
@@ -727,7 +728,7 @@ const fetchServerName = (_apiClient) => {
         ?.getPublicSystemInfo()
         .then(({ ServerName }) => {
             documentTitle = ServerName || documentTitle;
-            document.title = documentTitle;
+            document.title = isWallabyDisplay() ? brandText(documentTitle) : documentTitle;
         })
         .catch(err => {
             console.error('[LibraryMenu] failed to fetch system info', err);
@@ -746,7 +747,7 @@ function setDefaultTitle () {
         pageTitleElement.innerHTML = '';
     }
 
-    document.title = documentTitle;
+    document.title = isWallabyDisplay() ? brandText(documentTitle) : documentTitle;
 }
 
 function setTitle (title) {
@@ -772,7 +773,7 @@ function setTitle (title) {
         pageTitleElement.innerText = html || '';
     }
 
-    document.title = title || documentTitle;
+    document.title = isWallabyDisplay() ? brandText(title || documentTitle) : title || documentTitle;
 }
 
 function setTransparentMenu (transparent) {
