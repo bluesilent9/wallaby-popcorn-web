@@ -274,14 +274,16 @@ export function LibraryViews({
                     style={{ height: Math.ceil(total / columns) * rowHeight }}
                 >
                     <div
-                        className='itemsContainer wallaby-library-cells'
-                        style={{
-                            top: Math.floor(start / columns) * rowHeight,
-                            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`
-                        }}
+                        className='wallaby-library-window'
+                        style={
+                            {
+                                top: Math.floor(start / columns) * rowHeight,
+                                '--wallaby-library-columns': columns
+                            } as React.CSSProperties
+                        }
                     >
                         <ItemsContainer
-                            className='wallaby-native-items'
+                            className='wallaby-library-cells'
                             queryKey={['User', user?.Id, 'Items']}
                             reloadItems={data.refresh}
                         >
