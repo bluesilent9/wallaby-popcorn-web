@@ -2,6 +2,9 @@ import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collec
 import { UseQueryResult } from '@tanstack/react-query';
 import React, { type FC, type PropsWithChildren, createContext, useContext, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useApi } from 'hooks/useApi';
+import { useWallaby } from 'wallaby/useWallaby';
+import { useWindowedLibrary, type WindowedLibrary } from 'wallaby/useWindowedLibrary';
 import { useLocalStorage } from 'usehooks-ts';
 
 import useCurrentTab from 'hooks/useCurrentTab';
@@ -21,6 +24,7 @@ interface LibraryState {
     content?: LibraryTabContent;
     isLibraryPath: boolean;
     id?: string;
+    windowed?: WindowedLibrary;
     itemsResult?: UseQueryResult<ItemDtoQueryResult | undefined, Error>;
     viewSettings?: LibraryViewSettings;
     setViewSettings?: React.Dispatch<React.SetStateAction<LibraryViewSettings>>;
@@ -35,6 +39,8 @@ export const useLibrary = () => useContext(LibraryContext);
 
 export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) => {
     const { pathname } = useLocation();
+    const wide = useWallaby();
+    const { user } = useApi();
     const { libraryId, activeTab, settingsKey } = useCurrentTab();
 
     const route = useMemo(() => LibraryRoutes.find(({ path }) => path === pathname), [pathname]);
@@ -48,15 +54,18 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
     // Local storage requires the view type to be known upfront so default to movies if unknown
     const settingsViewType = viewType ?? LibraryTab.Movies;
     const [viewSettings, setViewSettings] = useLocalStorage<LibraryViewSettings>(
-        getSettingsKey(settingsViewType, settingsKey),
+        wide ? `${getSettingsKey(settingsViewType, settingsKey)} - Wallaby - ${user?.Id}` : getSettingsKey(settingsViewType, settingsKey),
         getDefaultLibraryViewSettings(settingsViewType)
     );
 
+    const continuous = wide && isLibPath && !!content?.isPaginationEnabled;
+    const windowed = useWindowedLibrary(continuous, viewType, libraryId, content?.itemType ?? [], viewSettings);
     const itemsResult = useGetItemsViewByType(
         viewType,
         libraryId,
         content?.itemType,
-        viewSettings
+        viewSettings,
+        !continuous
     );
 
     const state = useMemo(() => ({
@@ -67,8 +76,9 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
         content,
         viewSettings,
         setViewSettings,
-        itemsResult
-    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult]);
+        itemsResult: continuous ? undefined : itemsResult,
+        windowed: continuous ? windowed : undefined
+    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult, continuous, windowed]);
 
     return (
         <LibraryContext.Provider value={state}>
