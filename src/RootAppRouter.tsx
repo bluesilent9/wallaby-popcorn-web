@@ -17,6 +17,7 @@ import layoutManager from 'components/layoutManager';
 import BangRedirect from 'components/router/BangRedirect';
 import { createRouterHistory } from 'components/router/routerHistory';
 import appTheme from 'themes';
+import { WallabySurface } from 'wallaby/WallabySurface';
 import { ThemeStorageManager } from 'themes/themeStorageManager';
 
 const router = createHashRouter([
@@ -55,10 +56,12 @@ function RootAppLayout() {
             defaultMode='dark'
             storageManager={ThemeStorageManager}
         >
-            <Backdrop />
-            <AppHeader isHidden={layoutManager.modern || isNewLayoutPath} />
+            <WallabySurface>
+                <Backdrop />
+                <AppHeader isHidden={layoutManager.modern || isNewLayoutPath} />
 
-            <Outlet />
+                <Outlet />
+            </WallabySurface>
         </ThemeProvider>
     );
 }
