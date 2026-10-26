@@ -31,19 +31,21 @@ const ShuffleButton: FC<ShuffleButtonProps> = ({
     isTextVisible,
     libraryViewSettings
 }) => {
-    const { itemsResult } = useLibrary();
-    const isPending = itemsResult?.isPending ?? true;
-    const totalRecordCount = itemsResult?.data?.TotalRecordCount ?? 0;
+    const { itemsResult, windowed } = useLibrary();
+    const isPending = windowed ? windowed.total === undefined : itemsResult?.isPending ?? true;
+    const totalRecordCount = windowed?.total ?? itemsResult?.data?.TotalRecordCount ?? 0;
 
-    const shuffle = useCallback(() => {
+    const shuffle = useCallback(async () => {
         // For the Homevideos library Videos tab, pass items directly to playback since
         // the playback manager hardcodes MediaTypes: 'Photo' for the Homevideos library
         // which would exclude videos from the queue
         if (item && !hasFilters && !(viewType === LibraryTab.Videos && collectionType === CollectionType.Homevideos)) {
             playbackManager.shuffle(item);
         } else {
+            const actionItems = windowed ? await windowed.itemsForAction() : items;
+            if (!actionItems.length) return;
             playbackManager.play({
-                items,
+                items: actionItems,
                 autoplay: true,
                 queryOptions: {
                     ParentId: item?.Id ?? undefined,
@@ -54,7 +56,7 @@ const ShuffleButton: FC<ShuffleButtonProps> = ({
                 console.error('[ShuffleButton] failed to play', err);
             });
         }
-    }, [collectionType, hasFilters, item, items, libraryViewSettings, viewType]);
+    }, [collectionType, hasFilters, item, items, libraryViewSettings, viewType, windowed]);
 
     return (
         <Button
