@@ -48,6 +48,7 @@ const LibraryToolbar: FC = () => {
         content,
         isLibraryPath,
         itemsResult,
+        windowed,
         viewSettings,
         setViewSettings
     } = useLibrary();
@@ -61,8 +62,8 @@ const LibraryToolbar: FC = () => {
 
     const { data: item } = useItem(parentId || undefined);
 
-    const isPending = itemsResult?.isPending ?? true;
-    const totalRecordCount = itemsResult?.data?.TotalRecordCount ?? 0;
+    const isPending = windowed ? windowed.total === undefined : itemsResult?.isPending ?? true;
+    const totalRecordCount = windowed?.total ?? itemsResult?.data?.TotalRecordCount ?? 0;
     const items = itemsResult?.data?.Items ?? [];
     const hasFilterOptions = Object.values(viewSettings?.Filters ?? {}).some(f => !!f);
     const hasFilters = !!viewSettings?.Alphabet || hasFilterOptions;
@@ -97,7 +98,7 @@ const LibraryToolbar: FC = () => {
     return (
         <Toolbar
             variant='dense'
-            className='padded-left padded-right'
+            className={`padded-left padded-right${windowed ? ' wallaby-library-toolbar' : ''}`}
             sx={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -123,7 +124,7 @@ const LibraryToolbar: FC = () => {
                             marginLeft: 1
                         }}
                     >
-                        <Chip label={itemCountDisplay} />
+                        {!windowed && <Chip label={itemCountDisplay} />}
 
                         {hasFilters && (
                             <Button
@@ -262,7 +263,7 @@ const LibraryToolbar: FC = () => {
                             )}
                         </ButtonGroup>
 
-                        {isPaginationEnabled && isUserPaginationEnabled && (
+                        {!windowed && isPaginationEnabled && isUserPaginationEnabled && (
                             <Pagination
                                 setLibraryViewSettings={setLibraryViewSettings}
                                 index={startIndex}
