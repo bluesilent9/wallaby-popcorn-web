@@ -20,6 +20,8 @@ import { LibraryTab } from 'types/libraryTab';
 import type { ListOptions } from 'types/listOptions';
 
 import AlphabetPicker from './AlphabetPicker';
+import { LibraryViews } from 'wallaby/LibraryViews';
+import { useWallaby } from 'wallaby/useWallaby';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
 const ItemsView: FC = () => {
@@ -28,9 +30,11 @@ const ItemsView: FC = () => {
         collectionType,
         content,
         itemsResult,
+        windowed,
         viewSettings,
         setViewSettings
     } = useLibrary();
+    const wide = useWallaby();
     const viewType = content?.viewType ?? LibraryTab.Movies;
     const libraryViewSettings = viewSettings ?? getDefaultLibraryViewSettings(viewType);
     const setLibraryViewSettings = useMemo(
@@ -209,7 +213,8 @@ const ItemsView: FC = () => {
                 />
             )}
 
-            {(!itemsResult || itemsResult.isPending) ? (
+            {wide && windowed && <LibraryViews data={windowed} mode={libraryViewSettings.ViewMode} cardOptions={getCardOptions()} listOptions={getListOptions()} />}
+            {!(wide && windowed) && ((!itemsResult || itemsResult.isPending) ? (
                 <Loading />
             ) : (
                 <ItemsContainer
@@ -220,7 +225,7 @@ const ItemsView: FC = () => {
                 >
                     {getItems()}
                 </ItemsContainer>
-            )}
+            ))}
         </Box>
     );
 };
