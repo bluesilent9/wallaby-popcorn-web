@@ -7,6 +7,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 
+import { useWallaby } from 'wallaby/useWallaby';
 import globalize from 'lib/globalize';
 
 import type { DisplaySettingsValues } from '../types/displaySettingsValues';
@@ -17,33 +18,36 @@ interface LibraryPreferencesProps {
 }
 
 export function LibraryPreferences({ onChange, values }: Readonly<LibraryPreferencesProps>) {
+    const wide = useWallaby();
     return (
         <Stack spacing={3}>
             <Typography variant='h2'>{globalize.translate('HeaderLibraries')}</Typography>
 
-            <FormControl fullWidth>
-                <TextField
-                    aria-describedby='display-settings-lib-pagesize-description'
-                    value={values.libraryPageSize}
-                    label={globalize.translate('LabelLibraryPageSize')}
-                    name='libraryPageSize'
-                    onChange={onChange}
-                    slotProps={{
-                        htmlInput: {
-                            type: 'number',
-                            inputMode: 'numeric',
-                            max: '1000',
-                            min: '0',
-                            pattern: '[0-9]',
-                            required: true,
-                            step: '1'
-                        }
-                    }}
-                />
-                <FormHelperText id='display-settings-lib-pagesize-description'>
-                    {globalize.translate('LabelLibraryPageSizeHelp')}
-                </FormHelperText>
-            </FormControl>
+            {!wide && (
+                <FormControl fullWidth>
+                    <TextField
+                        aria-describedby='display-settings-lib-pagesize-description'
+                        value={values.libraryPageSize}
+                        label={globalize.translate('LabelLibraryPageSize')}
+                        name='libraryPageSize'
+                        onChange={onChange}
+                        slotProps={{
+                            htmlInput: {
+                                type: 'number',
+                                inputMode: 'numeric',
+                                max: '1000',
+                                min: '0',
+                                pattern: '[0-9]',
+                                required: true,
+                                step: '1'
+                            }
+                        }}
+                    />
+                    <FormHelperText id='display-settings-lib-pagesize-description'>
+                        {globalize.translate('LabelLibraryPageSizeHelp')}
+                    </FormHelperText>
+                </FormControl>
+            )}
 
             <FormControl fullWidth>
                 <FormControlLabel
