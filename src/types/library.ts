@@ -51,7 +51,8 @@ export interface Filters {
 
 export enum ViewMode {
     GridView = 'grid',
-    ListView = 'list'
+    ListView = 'list',
+    StandardView = 'standard'
 }
 
 export interface LibraryViewSettings {
