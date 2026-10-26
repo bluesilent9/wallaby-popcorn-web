@@ -1,3 +1,5 @@
+import { useWallaby } from 'wallaby/useWallaby';
+import wallabyIcon from 'wallaby/assets/mark.png';
 import { getDisplayVersion } from '@jellyfin/sdk/lib/utils/versioning';
 import Box from '@mui/material/Box';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -10,6 +12,7 @@ import ListItemLink from 'components/ListItemLink';
 import appIcon from '@jellyfin/ux-web/icon-transparent.png';
 
 const DrawerHeaderLink = () => {
+    const wide = useWallaby();
     const { data: systemInfo } = useSystemInfo();
 
     return (
@@ -17,12 +20,12 @@ const DrawerHeaderLink = () => {
             <ListItemIcon sx={{ minWidth: 56 }}>
                 <Box
                     component='img'
-                    src={appIcon}
+                    src={wide ? wallabyIcon : appIcon}
                     sx={{ height: '2.5rem' }}
                 />
             </ListItemIcon>
             <ListItemText
-                primary={systemInfo?.ServerName || 'Jellyfin'}
+                primary={systemInfo?.ServerName || (wide ? 'Wallaby Popcorn' : 'Jellyfin')}
                 secondary={getDisplayVersion(systemInfo?.Version)}
                 slotProps={{
                     primary: { variant: 'h6' }
