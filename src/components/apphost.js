@@ -1,3 +1,4 @@
+import { isWallabyDisplay } from 'wallaby/platform';
 import appSettings from '../scripts/settings/appSettings';
 import browser from '../scripts/browser';
 import Events from '../utils/events.ts';
@@ -393,8 +394,8 @@ export const appHost = {
             window.NativeShell.AppHost.deviceId() : getDeviceId();
     },
     appName: function () {
-        return window.NativeShell?.AppHost?.appName ?
-            window.NativeShell.AppHost.appName() : appName;
+        if (window.NativeShell?.AppHost?.appName) return window.NativeShell.AppHost.appName();
+        return isWallabyDisplay() ? 'Wallaby Popcorn' : appName;
     },
     appVersion: function () {
         return window.NativeShell?.AppHost?.appVersion ?
