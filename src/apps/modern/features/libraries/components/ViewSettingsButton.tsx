@@ -19,6 +19,7 @@ import Popover from '@mui/material/Popover';
 import Switch from '@mui/material/Switch';
 
 import globalize from 'lib/globalize';
+import { useWallaby } from 'wallaby/useWallaby';
 import { LibraryViewSettings, ViewMode } from 'types/library';
 import { LibraryTab } from 'types/libraryTab';
 
@@ -50,6 +51,7 @@ const ViewSettingsButton: FC<ViewSettingsButtonProps> = ({
     libraryViewSettings,
     setLibraryViewSettings
 }) => {
+    const wide = useWallaby();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const open = Boolean(anchorEl);
@@ -92,6 +94,11 @@ const ViewSettingsButton: FC<ViewSettingsButtonProps> = ({
         setIsSettingsOpen(false);
     }, [setLibraryViewSettings]);
 
+    const onStandardViewClick = useCallback(() => {
+        setLibraryViewSettings(prev => ({ ...prev, ViewMode: ViewMode.StandardView }));
+        setIsSettingsOpen(false);
+    }, [setLibraryViewSettings]);
+
     const onSettingsClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
         setIsSettingsOpen(prev => !prev);
@@ -104,6 +111,7 @@ const ViewSettingsButton: FC<ViewSettingsButtonProps> = ({
         }));
     }, [setLibraryViewSettings]);
 
+    const isStandardView = wide && libraryViewSettings.ViewMode === ViewMode.StandardView;
     const isGridView = libraryViewSettings.ViewMode === ViewMode.GridView;
     const isImageTypeVisible = !IMAGE_TYPE_EXCLUDED_VIEWS.includes(viewType);
 
@@ -253,12 +261,18 @@ const ViewSettingsButton: FC<ViewSettingsButtonProps> = ({
                         onClick={onListViewClick}
                     >
                         <ListItemIcon>
-                            {isGridView ? null : <Check fontSize='small' />}
+                            {!isGridView && !isStandardView ? <Check fontSize='small' /> : null}
                         </ListItemIcon>
                         <ListItemText>
                             {globalize.translate('ListView')}
                         </ListItemText>
                     </MenuItem>
+                    {wide && [LibraryTab.Movies, LibraryTab.Series, LibraryTab.Episodes, LibraryTab.Videos].includes(viewType) && (
+                        <MenuItem onClick={onStandardViewClick} selected={isStandardView}>
+                            <ListItemIcon>{isStandardView && <Check fontSize='small' />}</ListItemIcon>
+                            <ListItemText>Standard View</ListItemText>
+                        </MenuItem>
+                    )}
                 </MenuList>
             </Popover>
         </>
