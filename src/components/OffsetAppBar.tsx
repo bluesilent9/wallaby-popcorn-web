@@ -1,6 +1,7 @@
 import AppBar, { type AppBarProps } from '@mui/material/AppBar';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
 import React, { useLayoutEffect, useRef, useState, type FC, type PropsWithChildren } from 'react';
+import { useWallaby } from 'wallaby/useWallaby';
 import ResizeObserver from 'resize-observer-polyfill';
 
 /** The default height of an AppBar. */
@@ -13,6 +14,7 @@ interface OffsetAppBarProps extends AppBarProps {
     dense?: boolean;
     /** The elevation to apply when the user has scrolled. Defaults to 1. */
     elevation?: number;
+    onHeightChange?: (height: number) => void;
 }
 
 /**
@@ -22,8 +24,10 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
     children,
     dense = false,
     elevation = 1,
+    onHeightChange,
     ...props
 }) => {
+    const wide = useWallaby();
     const appBarRef = useRef<HTMLHtmlElement>(null);
     const [height, setHeight] = useState(dense ? DENSE_APP_BAR_HEIGHT : DEFAULT_APP_BAR_HEIGHT);
 
@@ -31,6 +35,10 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
         disableHysteresis: true,
         threshold: 0
     });
+
+    useLayoutEffect(() => {
+        onHeightChange?.(height);
+    }, [height, onHeightChange]);
 
     useLayoutEffect(() => {
         const el = appBarRef.current;
@@ -62,14 +70,16 @@ const OffsetAppBar: FC<PropsWithChildren<OffsetAppBarProps>> = ({
         };
     }, []);
 
+    const barColor = scrollTrigger ? 'default' : 'transparent';
+    const barElevation = scrollTrigger ? elevation : 0;
     return (
         <>
             <AppBar
                 {...props}
                 ref={appBarRef}
                 position='fixed'
-                color={scrollTrigger ? 'default' : 'transparent'}
-                elevation={scrollTrigger ? elevation : 0}
+                color={wide ? 'transparent' : barColor}
+                elevation={wide ? 0 : barElevation}
             >
                 {children}
             </AppBar>
