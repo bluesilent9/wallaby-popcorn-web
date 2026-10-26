@@ -9,6 +9,8 @@ import ServerButton from 'components/toolbar/ServerButton';
 import RemotePlayButton from './RemotePlayButton';
 import SyncPlayButton from './SyncPlayButton';
 import SearchButton from './SearchButton';
+import { useWallaby } from 'wallaby/useWallaby';
+import { libraryPath, detailPath } from 'wallaby/WallabySurface';
 import UserViewNav from './userViews/UserViewNav';
 
 interface AppToolbarProps {
@@ -23,9 +25,10 @@ const AppToolbar: FC<AppToolbarProps> = ({
     onDrawerButtonClick
 }) => {
     const location = useLocation();
+    const wide = useWallaby();
 
     // The video osd does not show the standard toolbar
-    if (location.pathname === '/video') return null;
+    if (location.pathname === '/video' || (wide && (libraryPath(location.pathname) || detailPath(location.pathname)))) return null;
 
     // Only show the back button in apps when appropriate
     const isBackButtonAvailable = window.NativeShell && appRouter.canGoBack(location.pathname);
@@ -45,7 +48,7 @@ const AppToolbar: FC<AppToolbarProps> = ({
             isDrawerAvailable={isDrawerAvailable}
             isDrawerOpen={isDrawerOpen}
             onDrawerButtonClick={onDrawerButtonClick}
-            isBackButtonAvailable={isBackButtonAvailable}
+            isBackButtonAvailable={wide ? false : isBackButtonAvailable}
             isUserMenuAvailable={!isPublicPath}
             className='padded-left padded-right'
         >
@@ -56,7 +59,7 @@ const AppToolbar: FC<AppToolbarProps> = ({
                 >
                     <ServerButton />
 
-                    {!isPublicPath && (
+                    {!isPublicPath && !wide && (
                         <UserViewNav />
                     )}
                 </Stack>
