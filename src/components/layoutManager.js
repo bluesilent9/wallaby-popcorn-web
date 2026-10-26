@@ -38,7 +38,9 @@ class LayoutManager {
         }
 
         console.debug('[LayoutManager] using layout mode', normalizedLayout);
-        this.modern = !isLegacyLayout;
+        // The Wallaby desktop/TV views share one React view system. Mobile and
+        // mobile-legacy retain their upstream routing and layouts.
+        this.modern = !isLegacyLayout || normalizedLayout === LayoutMode.Desktop || normalizedLayout === LayoutMode.Tv;
         if (layoutValue === LayoutMode.Modern) {
             const legacyLayoutMode = browser.mobile ? LayoutMode.Mobile : LayoutMode.Desktop;
             console.debug('[LayoutManager] using legacy layout mode', legacyLayoutMode);
