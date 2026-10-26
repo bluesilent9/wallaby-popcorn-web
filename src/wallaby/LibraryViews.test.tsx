@@ -32,7 +32,12 @@ vi.mock('resize-observer-polyfill', () => ({
     }
 }));
 vi.mock('elements/emby-itemscontainer/ItemsContainer', () => ({
-    default: ({ children }: PropsWithChildren) => <div>{children}</div>
+    default: ({
+        children,
+        className
+    }: PropsWithChildren<{ className?: string }>) => (
+        <div className={`itemsContainer ${className || ''}`}>{children}</div>
+    )
 }));
 vi.mock('components/cardbuilder/Card/Cards', () => ({
     default: ({ items }: { items: ItemDto[] }) => (
@@ -148,4 +153,19 @@ it('hover selects and focuses titles while a click retains the native detail rou
     expect(
         host.querySelector('.selected')?.getAttribute('data-wallaby-index')
     ).toBe('2');
+});
+
+it('uses a single native action container as the grid with cells as direct children', async () => {
+    await render(ViewMode.StandardView);
+    const native = host.querySelector('.itemsContainer.wallaby-library-cells')!;
+    expect(native).toBeTruthy();
+    expect(native.parentElement?.className).toBe('wallaby-library-window');
+    expect(
+        native.parentElement?.style.getPropertyValue(
+            '--wallaby-library-columns'
+        )
+    ).toBe('1');
+    expect(native.querySelector('.itemsContainer')).toBeNull();
+    expect(native.children[0].hasAttribute('data-wallaby-index')).toBe(true);
+    expect(host.querySelectorAll('.itemsContainer')).toHaveLength(1);
 });
