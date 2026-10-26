@@ -1,3 +1,4 @@
+import { isWallabyDisplay, brandText } from 'wallaby/platform';
 import isEmpty from 'lodash-es/isEmpty';
 
 import { EventType } from 'constants/eventType';
@@ -237,12 +238,12 @@ function translateKey(key) {
 function translateKeyFromModule(key, module) {
     let dictionary = getDictionary(module, getCurrentLocale());
     if (dictionary?.[key]) {
-        return dictionary[key];
+        return isWallabyDisplay() ? brandText(dictionary[key]) : dictionary[key];
     }
 
     dictionary = getDictionary(module, FALLBACK_CULTURE);
     if (dictionary?.[key]) {
-        return dictionary[key];
+        return isWallabyDisplay() ? brandText(dictionary[key]) : dictionary[key];
     }
 
     if (!dictionary || isEmpty(dictionary)) {
