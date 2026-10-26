@@ -43,6 +43,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
     const { api, user, __legacyApiClient__: client } = useApi();
     const home = location.pathname === '/' || location.pathname === '/home';
     const library = libraryPath(location.pathname);
+    const video = location.pathname === '/video';
     const dashboard =
         /^\/(dashboard|metadata|configuration|networking|users|library)/.test(
             location.pathname
@@ -54,6 +55,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
     const generation = useRef(0);
     const previous = useRef(location.pathname + location.search);
     const origin = useRef<string>();
+    const playbackOrigin = useRef<string>();
     const select = useCallback(
         (item?: ItemDto) => {
             const folder =
@@ -130,13 +132,16 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
     }, [images]);
     useEffect(() => {
         const old = previous.current;
+        if (video && old.split('?')[0] !== '/video') {
+            playbackOrigin.current = old;
+        }
         if (home) origin.current = undefined;
         if (libraryPath(old.split('?')[0]) && detailPath(location.pathname)) {
             origin.current = old;
         }
         previous.current = location.pathname + location.search;
         if (home || !library) select();
-    }, [location.pathname, location.search, home, library, select]);
+    }, [location.pathname, location.search, home, library, video, select]);
     useEffect(() => {
         if (!enabled || !home || !api || !user?.Id) return;
         let active: Element | null = null;
@@ -183,8 +188,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
     useEffect(() => {
         if (!enabled) return;
         const blocked = () =>
-            location.pathname === '/video'
-            || [
+            [
                 ...document.querySelectorAll(
                     '[role="dialog"], [role="menu"], .dialog.opened'
                 )
@@ -199,7 +203,11 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
             });
         const back = () => {
             if (blocked()) return false;
-            if (detailPath(location.pathname)) {
+            if (video) {
+                // Leaving the player runs its existing viewbeforehide handler:
+                // stop local playback, release the player and leave fullscreen.
+                navigate(playbackOrigin.current || '/home', { replace: true });
+            } else if (detailPath(location.pathname)) {
                 navigate(origin.current || '/home');
             } else if (library) {
                 navigate('/home');
@@ -222,7 +230,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
                 event.key === 'Escape'
                 || event.key === 'Esc'
                 || event.keyCode === 27;
-            if (escape && (library || detailPath(location.pathname) || home)) {
+            if (escape && (video || library || detailPath(location.pathname) || home)) {
                 if (!event.repeat && !back()) return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -255,7 +263,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
             window.removeEventListener('keydown', key, true);
             inputManager.off(window, command);
         };
-    }, [enabled, home, library, location.pathname, navigate]);
+    }, [enabled, home, library, video, location.pathname, navigate]);
     const value = useMemo(() => ({ select, setToolbarHeight }), [select]);
     const artwork = (
         <>
@@ -270,7 +278,9 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
             <div className='wallaby-art-shade' />
         </>
     );
-    const screenClass = enabled ?
+    // Video is mounted separately at the start of document.body. An opaque,
+    // isolated themed wrapper above it would cover both HTML and native video.
+    const screenClass = enabled && !video ?
         [
             'wallaby-screen',
             home && 'wallaby-home',
@@ -295,7 +305,7 @@ export function WallabySurface({ children }: Readonly<PropsWithChildren>) {
                 }
                 className={screenClass}
             >
-                {enabled && !dashboard && (
+                {enabled && !dashboard && !video && (
                     <div className='wallaby-backdrop' aria-hidden>
                         {artwork}
                     </div>
